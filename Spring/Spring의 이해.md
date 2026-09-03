@@ -125,3 +125,34 @@ Spring은 Spring 프레임워크, Spring 부트, Spring 클라우드, Spring AI 
 - <문제점>
 - 인터페이스를 도입하면 추상화라는 비용이 발생함(코드를 디버깅하거나 확인할 때 한단계 더 거쳐야 함)
 
+## IoC (Inversion of Control, 제어의 역전)
+> 제어의 역전이란 프로그램의 흐름 제어권 (객체 생성, 호출, 생명주기 관리 등)을 개발자가 작성한 코드가 아닌 외부의 컨테이너(프레임워크)가 주도하는 설계 원칙을 의미
+
+### 전통적인 방식 vs IoC
+
+|구분|전통적인 제어 흐름(개발자가 주도)|제어의 역전(프레임워크가 주도)|
+|:---:|:---:|:---:|
+|객체 생성|개발자가 코드 안에서 직접 new로 생성|외부 컨테이너가 대신 생성|
+|의존관계 연결|객체가 사용할 하위 객체를 스스로 결정 및 생성|컨테이너가 필요한 객체를 꽂아줌(DI)|
+|실행 흐름|main() 함수에서 개발자가 호출 순서를 지정|프레임워크가 라이프사이클을 돌리며 내 코드를 호출|
+|비유|내가 직접 배우를 캐스팅하고 무대를 세팅함|나는 연기 대본만 넘기고, 기획자가 배우를 배치함|
+
+``` java
+public class OrderServiceImpl implements OrderService {
+    private final MemberRepository memberRepository;
+    private final DiscountPolicy discountPolicy;
+
+    // 무엇이 들어올지 스스로 결정하지 않고, 외부에서 주는 대로 받음
+    public OrderServiceImpl(MemberRepository memberRepository, DiscountPolicy discountPolicy) {
+        this.memberRepository = memberRepository;
+        this.discountPolicy = discountPolicy;
+    }
+}
+```
+객체를 만들고 엮어주는 권한은 외부의 설정자(AppConfig 또는 스프링 컨테이너)로 넘어감 -> IoC
+
+### AppConfig도 결국 개발자가 작성하는 것 아닌가?
+제어권이 넘어갔다의 관점이 개발자 본인이 아니라 실제 일(비즈니스 로직)을 수행하는 객체(Service, Repository)들의 관점에서 봐야함
+> AppConfig가 도입되어 구성 영역과 실행 영역으로 나누어진 이후에는 객체 내부에서 구현체를 직접 지정하여 의존관계를 제어하던 것이 AppcConfig라는 외부에서 제어 주도권을 행사함으로써 객체의 제어권이 외부로 넘어감(역전됨)
+
+<mark>AppConfig를 넘어 스프링 프레임워크에서는 개발자가 단지 @Configuration, @Bean이라는 설명서만 선언해 두면 스프링 프레임워크 컨테이너가 스스로 그 설명서를 읽고 알아서 객체 생성, 의존성 주입 등의 제어를 행사함</mark>
