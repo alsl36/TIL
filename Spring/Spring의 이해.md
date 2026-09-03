@@ -156,3 +156,43 @@ public class OrderServiceImpl implements OrderService {
 > AppConfig가 도입되어 구성 영역과 실행 영역으로 나누어진 이후에는 객체 내부에서 구현체를 직접 지정하여 의존관계를 제어하던 것이 AppcConfig라는 외부에서 제어 주도권을 행사함으로써 객체의 제어권이 외부로 넘어감(역전됨)
 
 <mark>AppConfig를 넘어 스프링 프레임워크에서는 개발자가 단지 @Configuration, @Bean이라는 설명서만 선언해 두면 스프링 프레임워크 컨테이너가 스스로 그 설명서를 읽고 알아서 객체 생성, 의존성 주입 등의 제어를 행사함</mark>
+
+### IoC, DI 그리고 OCP 와 DIP
+결국 좋은 객체 지향의 가장 중요한 원칙인 OCP(구현체가 아닌 인터페이스에 의존하자)와 DIP(기존 코드를 건드리지 않고 기능을 확장하자) 이 두가지의 원칙을 지키기 위해 IoC라는 설계원칙을 도입한 것이고, IoC라는 설계원칙을 이루어내는 중요한 구현기법 중 하나가 DI.
+
+### '정적인 의존관계' 와 '동적인 의존관계'
+**정적인 의존관계**는 클래스가 사용하는 import 코드만 보고 파악 가능. 즉, 어떤 인터페이스에 의존하는 지는 쉽게 파악이 가능하고 이를 정적인 의존관계라고 함. 하지만 실제로 어떤 객체가 해당 코드 내의 인터페이스에 주입 될지 알 수 없음. 이렇게 애플리케이션 실행 시점에 객체가 생성되어 주입된 의존관계를 **동적인 의존관계**라고 함. 
+
+<mark>이렇게 동적인 의존관계를 사용하여 의존관계를 주입하면 정적인 클래스 의존관계를 변경하지 않고, 동적인 객체 인스턴스 의존관계를 쉽게 변경할 수 있음</mark>
+
+### IoC 컨테이너(DI 컨테이너)
+AppConfig 처럼 객체를 생성하고 관리하면서 의존관계를 주입해주는 것을 **IoC 컨테이너** 혹은 **DI 컨테이너** 라고 함. 주로 DI 컨테이너 라는 용어가 많이 사용됨. Spring에서는 Spring이 DI컨테이너 역할을 해줌
+
+## Spring Container
+### AppConfig 스프링 기반으로 변경
+``` java
+@Configuration
+public class AppConfig {
+    
+    @Bean
+    public MemberService memberService() {
+        return new MemberServiceImpl(memberRepository());
+    }
+}
+```
+AppConfig에 설정을 구성한다는 뜻의 @Configuration을 붙여주고, 각 메서드에 @Bean을 붙여줌. 이렇게 하면 각각의 메서드를 Spring Container에 Spring Bean으로 등록을 해줌
+
+### Client에 Spring Container 적용
+``` java
+public class MemberApp {
+    public static void main(String[] args) {
+        
+         ApplicationContext applicationContext = new AnnotationConfigApplicationContext(AppConfig.class);
+        MemberService memberService = applicationContext.getBean("memberService", MemberService.class);
+
+```
+- ApplicationContext를 Spring Container라고 함. 기존에는 개발자가 AppConfig를 사용해서 직접 객체를 생성하고 DI를 했지만, 이제는 Spring Container를 통해서 사용함. 
+
+- Spring Container는 @Configuration이 붙은 AppConfig를 설정(구성)정보로 사용하고, 여기서 @Bean이라 적힌 메서드를 모두 호출해서 반환된 객체를 Spring Container에 등록해 놓음. 이렇게 컨테이너에 등록된 객체를 **스프링 빈**이라고 함. 스프링 빈은 기본적으로 메서드의 명을 스프링 빈의 이름으로 사용함. 
+
+- 기존에 AppConfig를 통해서 필요한 객체를 메서드 호출을 통해 얻어냈다면 이제부터는 Spring Container에서 필요한 스프링 빈(객체)를 찾아야 하는데, 스프링 빈은 applicationContext.getBean() 메서드를 사용해서 찾을 수 있음.

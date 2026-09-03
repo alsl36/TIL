@@ -18,7 +18,7 @@
 ### 클라이언트와 DB 연결의 구분
 Spring 프로젝트를 개발할 때, 유사한 기능을 수행하더라도 클라이언트와 연결된 인터페이스와 DB와 연결된 인터페이스를 구분해야 됨. 예를들어, 클라이언트가 회원가입을 하거나 로그인을 할 때, 이를 처리하는 인터페이스와 구현체가 있을 것이고, 전달된 회원 정보를 DB에 생성하거 조회하는 역할을 수행하는 인터페이스와 구현체를 구분해야 함. 
 
-<img src="../images/interface의 분리.png" width="500" alt="interface의 분리 예시">
+<img src="../images/Spring 프로젝트 개발/image1.PNG" width="500" alt="interface의 분리 예시">
 
 ### 어디까지 인터페이스와 구현체로 구분해야하는가
 실무에서 인터페이스 분리 여부를 결정하는 기준은 명확함. **이 부분의 정책/기술이 바뀔 가능성이 있는가?(변화의 가능성)** 과 **다형성이 필요한가?** 이다.
@@ -49,7 +49,7 @@ private final DiscountPolicy discountPolicy = new RateDiscountPolicy();
 
 <mark>문제는 OrderServiceImpl이 DiscountPolicy(추상)에만 의존하는 것이 아니라 FixDiscountPolicy(구현체)에도 의존했었기에 DIP와 OCP를 위반한다는 것</mark>
 
-<img src="../images/DIP, OCP 위반 예시.PNG" width="500" alt="DIP, OCP 위반 예시">
+<img src="../images/Spring 프로젝트 개발/image2.PNG" width="500" alt="DIP, OCP 위반 예시">
 
 > 애플리케이션을 하나의 공연이라 할 때, 각각의 인터페이스는 배역이고, 이를 연기하는 배우가 구현체가 된다. 근데, 위의 애플리케이션에서는 배우가 자신의 상대 배우를 결정하고 있는 상황이 발생함. 따라서 이 공연의 기획자를 만들고, 배역에 맞는 배우를 넣어주는 것을 기획자가 담당하는 방식으로 해결해야 함
 
@@ -59,3 +59,4 @@ DIP 와 OCP를 위반하지 않고 오직 추상(인터페이스)에만 의존�
 
 ### '사용영역'과 '구성영역'의 분리
 AppConfig의 등장으로 애플리케이션이 크게 사용영역과, 객체를 생성하고 구성하는 구성영역으로 분리됨. 구성영역에 있는 AppConfig 일종의 공연 기획자가 배우들을 조율하기 때문에 배우를 바꿔야 할 때 사용영역을 건드리지 않아도 됨
+
