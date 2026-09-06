@@ -182,7 +182,7 @@ public class AppConfig {
 ```
 AppConfig에 설정을 구성한다는 뜻의 @Configuration을 붙여주고, 각 메서드에 @Bean을 붙여줌. 이렇게 하면 각각의 메서드를 Spring Container에 Spring Bean으로 등록을 해줌
 
-### Client에 Spring Container 적용
+### Client 코드에 Spring Container 적용
 ``` java
 public class MemberApp {
     public static void main(String[] args) {
@@ -196,3 +196,60 @@ public class MemberApp {
 - Spring Container는 @Configuration이 붙은 AppConfig를 설정(구성)정보로 사용하고, 여기서 @Bean이라 적힌 메서드를 모두 호출해서 반환된 객체를 Spring Container에 등록해 놓음. 이렇게 컨테이너에 등록된 객체를 **스프링 빈**이라고 함. 스프링 빈은 기본적으로 메서드의 명을 스프링 빈의 이름으로 사용함. 
 
 - 기존에 AppConfig를 통해서 필요한 객체를 메서드 호출을 통해 얻어냈다면 이제부터는 Spring Container에서 필요한 스프링 빈(객체)를 찾아야 하는데, 스프링 빈은 applicationContext.getBean() 메서드를 사용해서 찾을 수 있음.
+
+### BeanFactory와 ApplicationContext
+<img src="../images/Spring의 이해/img1.PNG" alt="Spring Container의 상속관계">
+
+**BeanFactory**
+- Spring Container의 최상위 인터페이스
+- Spring Bean을 관리하고 조회하는 역할 담당(getBean()메서드 제공 등)
+
+**ApplicationContext**
+- BeanFactory 기능을 모두 상속받아서 제공
+- BeanFactory에 더해서 여러 개의 인터페이스를 모두 상속받음
+- 애플리케이션 개발할 때 Bean을 관리하고 조회하는 기능은 물론, 수 많은 부가기능 제공
+
+<img src="../images/Spring의 이해/img2.PNG" alt="ApplicationContext의 상속관계">
+
+> ApplicationContext는 그림과 같이 여러개의 인터페이스를 모두 상속하여 다양한 편의 기능을 제공함
+
+**ApplicationContext의 부가기능**
+- 메세지소스를 활용한 국제화 기능
+    - 예를 들어서 한국 웹에서 들어오면 한국어로, 영어권에서 들어오면 영어로 출력
+- 환경변수
+    - 로컬, 개발, 운영 등을 구분해서 처리
+- 애플리케이션 이벤트
+    - 이벤트를 발행하고 구독하는 모델을 편리하게 지원
+- 편리한 리소스 조회
+    - 파일, 클래스패스, 외부 등에서 리소스를 편리하게 조회
+
+<mark>BeanFactory 와 ApplicationContext 모두 Spring Container라고 하지만 일반적으로 ApplicationContext만을 사용함</mark>
+
+### Spring Container 구현체
+<img src="../images/Spring의 이해/img3.PNG" alt="ApplicationContext 구현체">
+
+> ApplicationContext라는 Spring Container 인터페이스를 구현하는 구현체로 다양한 클래스를 사용할 수 있는데, 어떤 언어로 만들어진 Config 파일을 매개변수에 넣어주느냐에 따라 각기 다른 구현체를 사용함
+
+일반적으로 class 형식의 Config파일을 매개값으로 받는 구현체인 AnnotationConfigApplicationContext 구현체를 가장 많이 사용함
+
+<mark>중요한 것은 Spring은 이렇게 다양한 형식의 설정정보들을 지원할 수 있다는 것</mark>
+
+### Spring Bean 설정 메타 정보 - BeanDefinition
+
+스프링이 다양한 설정 형식을 지원할 수 있는 이유가 무엇인가?
+
+**Definition**이라는 추상화가 있기 때문!!
+
+BeanDefinition이라는 하나의 추상화를 만들어놓고, XML은 XML로 읽어서 구현하고, JAVA는 JAVA로 읽어서 구현하는 방식을 사용. 즉, Spring Container는 자바코드인지, XML인지 몰라도 되고, 오직 BeanDefinition만 알면, 각각의 언어에 맞는 Reader가 그에 맞게 설정정보를 읽은 후 BeanDefinition 추상화에 알맞게 띄워줌
+
+**BeanDefinition**안에는 다양한 Bean의 메타정보들이 포함됨. ex) 빈의 클래스명, 팩토리 역할의 빈 이름, 싱글톤 등등
+
+## SingleTon
+### 웹 애플리케이션과 싱글톤
+
+> 웹 애플리케이션에서는 보통 수많은 클라이언트가 동시에 요청을 하는 경우가 많음. 이 경우에 Spring을 사용하지 않는 순수한 DI Container의 경우 클라이언트가 요청을 보낼 때마다 새로운 객체를 생성해서 반환을 해주는 문제 발생
+<img src="../images/Spring의 이해/img4.PNG" alt="순수한 DI Container의 객체 생성">
+
+- 순수한 DI 컨테이너인 AppConfig는 요청을 할 때 마다 새로운 객체를 새로 생성함
+- 메모리 낭비가 매우 심함
+- <mark>해결방안은 해당 객체가 딱 1개만 생성되고, 공유하도록 설계 -> **SingleTon패턴**</mark>
