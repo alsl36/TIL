@@ -253,3 +253,108 @@ BeanDefinition이라는 하나의 추상화를 만들어놓고, XML은 XML로 �
 - 순수한 DI 컨테이너인 AppConfig는 요청을 할 때 마다 새로운 객체를 새로 생성함
 - 메모리 낭비가 매우 심함
 - <mark>해결방안은 해당 객체가 딱 1개만 생성되고, 공유하도록 설계 -> **SingleTon패턴**</mark>
+
+### Singleton Pattern
+
+> 클래스의 인스턴스가 딱 1개만 생성되는 것을 보장하는 패턴. 즉, 인스턴스가 2개 이상 생성되지 못하도록 막아야 함
+
+``` java
+package hello.core.singleton;
+
+public class SingletonService {
+
+    private static final SingletonService instance = new SingletonService();
+
+    public static SingletonService getInstance() {
+        return instance;
+    }
+
+    private SingletonService() {
+    }
+
+    public void login() {
+        System.out.println("싱글톤 객체 로직 호출");
+    }
+    
+}
+```
+
+1. static 영역에 객체 instance를 미리 하나 생성해서 올려둠
+2. 이 객체 인스턴스가 필요하면 오직 'getInstance()' 메서드를 통해서만 조회할 수 있음. 이 메서드를 호출하면 항상 같은 인스턴스를 반환함
+3. 딱 1개의 객체 인스턴스만 존재해야 하므로, 생성자를 private으로 막아서 혹시라도 외부에서 new 키워드로 객체 인스턴스가 생성되는 것을 막음
+
+> static 변수 vs instance 변수 </br>
+클래스 내부에서 instance 변수를 사용하여 필드를 생성하면, 객체가 생성될 때 해당 객체가 힙 영역에 올라가면서 동시에 필드가 초기화 됨. 만약 싱글톤 패턴을 instance 변수로 (static 선언없이) 생성한다면 필드가 초기화 될 때 'new SingletonService()' 메서드가 다시 호출되고, 이 객체가 또 힙 영역에 올라갈 때 필드가 다시 초기화 되는 과정에서 무한 루프에 빠지게 됨. 반면, static 변수로 선언하게 되면 여전히 객체는 힙 영역에 생성되지만, 해당 변수 필드는 클래스와 함께 메서드 영역에 올려놓기 때문에 초기화 되는 과정에서 무한 루프에 빠지지 않게 됨. <mark>따라서 싱글톤 패턴을 디자인할 때 해당 객체를 생성하는 변수는 static으로 선언해야 함</mark>  
+
+**Singleton Pattern 문제점**
+- 싱글톤 패턴을 구현하는 코드 자체가 많이 들어감
+- 의존관계상 클라이언트가 구체 클래스에 의존함 -> DIP위반 (getInstance()메서드를 호출할 때 의존하게 됨)
+- DIP 위반 -> OCP 위반으로 이어짐
+- 테스트하기 어려움
+- private 생성자로 자식 클래스를 만들기 어려움
+- 결론적으로 유연성이 떨어짐
+
+### Singleton Container
+
+> Spring Container는 싱글톤 패턴을 적용하지 않아도 알아서 객체 인스턴스를 싱글톤으로 관리함. 즉, 우리가 사용하는 Bean은 모두 싱글톤으로 관리됨
+
+<mark>Spring Container 덕분에 싱글톤 패턴의 모든 단점을 해결하면서 객체를 싱글톤으로 유지할 수 있음</mark>
+
+<img src="../images/Spring의 이해/img5.PNG" alt="싱글톤 컨테이너">
+
+이처럼 Spring Container는 자동으로 Bean을 싱글톤 형식으로 지원해줌
+
+
+### Singleton 방식의 주의점
+
+> Singleton Pattern 이든, Spring Container를 사용하여 Singleton 방식을 사용하든 객체 인스턴스를 하나만 생성해서 공유하는 싱글톤 방식은 여러 클라이언트가 같은 객체 인스턴스를 공유하기 때문에 싱글톤 객체는 상태를 유지(stateful)하게 설계하면 안됨. <mark>무상태(stateless)로 설계해야 함</mark>
+
+- 특정 클라이언트에 의존적인 필드가 있으면 안됨
+- 특정 클라이언트가 값을 변경할 수 있는 필드가 있으면 안됨
+- 가급적 읽기만 가능해야 함
+- 필드 대신에 자바에서 공유되지 않는, 지역변수, 파라미터, ThreadLocal 등을 사용해야 함
+
+### @Configuration의 비밀
+
+
+``` java
+    @Bean
+    public MemberService memberService() {
+        return new MemberServiceImpl(memberRepository());
+    } 
+
+    @Bean
+    public MemberRepository memberRepository() {
+        return new MemoryMemberRepository();
+    }
+```
+이렇게 서로 의존적인 관계의 Bean을 호출하면, new MemoryMemberRepository() 함수가 여러번 호출될 것이고, 그렇게 되면 여러 개의 MemoryMemberRepository 객체가 생성되는데, Singleton 패턴이 깨지게 되는 거 아닌가?
+
+**-> 여전히 Singleton 패턴이 유지되고, 하나의 객체를 공유해서 사용함**
+
+자바 코드로 new 함수를 호출했음에도 어떻게 하나의 객체를 유지하는 것인가?
+
+**-> @Configuration 의 비밀**
+
+<img src="../images/Spring의 이해/img6.PNG" alt="@Configuration 과정에서 생기는 일">
+
+@Configuration을 붙이면 내가 만든 AppConfig라는 클래스를 바로 사용하는 것이 아니라 Spring이 자동으로 (CGLIB이라는) 바이트코드 조작 라이브러리를 사용해서 AppConfig 클래스를 상속받은 임의의 다른 클래스를 만들고 그 클래스를 Spring Bean으로 등록함. 이를 통해 Singleton이 어떠한 상황에서도 유지될 수 있도록 만들어줌
+
+``` java
+@Bean
+public MemberRepository memberRepository() {
+
+ if (memoryMemberRepository가 이미 스프링 컨테이너에 등록되어 있으면?) {
+ return 스프링 컨테이너에서 찾아서 반환;
+ } else { //스프링 컨테이너에 없으면
+ 기존 로직을 호출해서 MemoryMemberRepository를 생성하고 스프링 컨테이너에 등록
+ return 반환
+ }
+}
+```
+아마 바이트코드를 조작해서 만든 임의의 클래스는 위의 코드와 같은 형태를 띄고 있을 것임 -> **Singleton 보장됨**
+
+> @Configuration을 사용하지 않고 @Bean만 사용해도 Spring Bean으로 등록은 모두 됨. 하지만 Singleton 보장이 되지 않음. 따라서 앞으로는 그냥 고민없이 @Configuration을 붙여서 사용하자!
+
+
+

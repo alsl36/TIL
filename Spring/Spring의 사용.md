@@ -80,3 +80,139 @@ getBeansOfType() 메서드를 사용해서 모든 Bean을 조회할 경우 Map �
     }
 ```
 
+## Component Scan
+
+> Component Scan을 통해서 자동으로 Bean을 등록하고, @Autowired를 통해서 자동으로 의존관계도 주입해줄 수 있음
+
+### 컴포넌트 스캔과 의존관계 자동 주입
+
+> Bean을 수동으로 등록하던 기존 방식을 실무에서도 사용하기는 어려움. 등록해야 할 Spring Bean이 수십, 수백개가 되면 일일이 등록하기도 귀찮고, 설정 정보도 커지고, 누락하는 문제도 발생. <mark>자동으로 Spring Bean을 등록하는 Component Scan 과 의존관계를 자동으로 등록하는 @Autowired라는 기능을 제공함</mark>
+
+</br>
+
+<새로운 AppConfig>
+``` java
+package hello.core;
+
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
+
+@Configuration
+@ComponentScan(
+    excludeFilters = @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = Configuration.class)
+) 
+public class AutoAppConfig {
+}
+```
+이렇게 기존의 AppConfig 파일과 달리 컴포넌트 스캔을 사용하는 AppConfig는 @Configuration 과 @ComponentScan 어노테이션만 붙여주면 됨
+
+*참고: 기존의 AppConfig 파일이나, Test 파일에서 작성한 설정정보도 자동으로 등록되기 때문에 이를 제외하기 위해서 exludeFilters를 이용함. 일반적으로는 사용x*
+
+``` java
+@Component
+public class MemoryMemberRepository implements MemberRepository {}
+```
+``` java
+@Component
+public class RateDiscountPolicy implements DiscountPolicy {}
+```
+이렇게 Spring Bean으로 등록할 class 앞에 @Component 어노테이션을 붙여주면 자동으로 스프링 빈이 등록됨
+
+**의존관계 주입이 필요했던 Spring Bean 들은 어떻게 의존관계 주입을 할 수 있는가?**
+
+``` java
+@Component
+public class MemberServiceImpl implements MemberService {
+ private final MemberRepository memberRepository;
+ @Autowired
+ public MemberServiceImpl(MemberRepository memberRepository) {
+ this.memberRepository = memberRepository;
+ }
+}
+```
+``` java
+@Component
+public class OrderServiceImpl implements OrderService {
+ private final MemberRepository memberRepository;
+ private final DiscountPolicy discountPolicy;
+ @Autowired
+ public OrderServiceImpl(MemberRepository memberRepository, DiscountPolicy
+discountPolicy) {
+ this.memberRepository = memberRepository;
+ this.discountPolicy = discountPolicy;
+ }
+}
+```
+의존관계 주입이 필요한 class에는 생성자 위에 @Autowired 어노테이션을 붙이면 자동으로 등록된 bean 중에서 의존관계를 주입시켜 줌
+
+1. @ComponentScan
+<img src="../images/Spring의 사용/img5.PNG" alt="컴포넌트 스캔">
+
+2. @Autowired 의존관계 자동 주입
+<img src="../images/Spring의 사용/img6.PNG" alt="Autowired 의존관계 자동 주입">
+
+### 탐색위치와 기본 스캔 대상
+
+> 모든 자바 클래스를 컴포넌트 스캔하면 시간이 오래 걸리기에 꼭 필요한 위치부터 탐색하도록 시작 위치를 지정할 수 있음
+
+``` java
+@ComponentScan(
+ basePackages = "hello.core",
+}
+```
+*여러개의 시작 위치를 지정할 수도 있음*
+
+<mark>만약 지정하지 않으면 @ComponentScan이 붙은 설정 정보 클래스의 패키지가 시작 위치가 됨</mark>
+
+따라서 패키지 위치를 따로 지정하지 말고, 설정 정보 클래스의 위치를 프로젝트 최상단에 두는 것을 추천
+
+**컴포넌트 스캔 기본 대상**
+- @Component
+- @Controller
+- @Service
+- @Repository
+- @Configuration
+
+해당 어노테이션들의 소스코드를 보면 모두 @Component를 포함하고 있기 때문
+
+### Filter
+
+> includeFilters 와 excludeFilters 를 사용해서 컴포넌트 스캔 대상을 추가로 지정하거나 제외할 대상을 지정할 수 있음
+
+``` java
+package hello.core.scan.filter;
+import java.lang.annotation.*;
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface MyExcludeComponent {
+}
+```
+excludeFilters 옵션으로 사용할 어노테이션을 하나 만들어 준 이후에
+
+``` java
+package hello.core.scan.filter;
+@MyExcludeComponent
+public class BeanB {
+}
+```
+스캔에서 제외할 클래스에 만들어둔 어노테이션을 붙여준 다음
+``` java
+@Configuration 
+    @ComponentScan(
+        includeFilters = @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = MyIncludeComponent.class),
+        excludeFilters = @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = MyExcludeComponent.class)
+    )
+    static class ComponentFilterAppConfig {}
+```
+excludeFilters 에 내가 만들어둔 MyExcludeComponent.class 어노테이션이 붙은 클래스를 스캔에서 제외하겠다는 코드를 작성하면 됨
+
+**FilterType 옵션**
+
+FilterType으로 사용할 수 있는 옵션은 어노테이션 외에도 5가지 옵션이 있음
+- ANNOTATION
+- ASSIGNABLE_TYPE
+- ASPECTJ
+- REGEX
+- CUSTOM
