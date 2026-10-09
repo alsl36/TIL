@@ -198,7 +198,7 @@ public class MemberApp {
 - 기존에 AppConfig를 통해서 필요한 객체를 메서드 호출을 통해 얻어냈다면 이제부터는 Spring Container에서 필요한 스프링 빈(객체)를 찾아야 하는데, 스프링 빈은 applicationContext.getBean() 메서드를 사용해서 찾을 수 있음.
 
 ### BeanFactory와 ApplicationContext
-<img src="../images/Spring의 이해/img1.PNG" alt="Spring Container의 상속관계">
+<img src="../../images/Spring의 이해/img1.PNG" alt="Spring Container의 상속관계">
 
 **BeanFactory**
 - Spring Container의 최상위 인터페이스
@@ -209,7 +209,7 @@ public class MemberApp {
 - BeanFactory에 더해서 여러 개의 인터페이스를 모두 상속받음
 - 애플리케이션 개발할 때 Bean을 관리하고 조회하는 기능은 물론, 수 많은 부가기능 제공
 
-<img src="../images/Spring의 이해/img2.PNG" alt="ApplicationContext의 상속관계">
+<img src="../../images/Spring의 이해/img2.PNG" alt="ApplicationContext의 상속관계">
 
 > ApplicationContext는 그림과 같이 여러개의 인터페이스를 모두 상속하여 다양한 편의 기능을 제공함
 
@@ -226,7 +226,7 @@ public class MemberApp {
 <mark>BeanFactory 와 ApplicationContext 모두 Spring Container라고 하지만 일반적으로 ApplicationContext만을 사용함</mark>
 
 ### Spring Container 구현체
-<img src="../images/Spring의 이해/img3.PNG" alt="ApplicationContext 구현체">
+<img src="../../images/Spring의 이해/img3.PNG" alt="ApplicationContext 구현체">
 
 > ApplicationContext라는 Spring Container 인터페이스를 구현하는 구현체로 다양한 클래스를 사용할 수 있는데, 어떤 언어로 만들어진 Config 파일을 매개변수에 넣어주느냐에 따라 각기 다른 구현체를 사용함
 
@@ -248,7 +248,7 @@ BeanDefinition이라는 하나의 추상화를 만들어놓고, XML은 XML로 �
 ### 웹 애플리케이션과 싱글톤
 
 > 웹 애플리케이션에서는 보통 수많은 클라이언트가 동시에 요청을 하는 경우가 많음. 이 경우에 Spring을 사용하지 않는 순수한 DI Container의 경우 클라이언트가 요청을 보낼 때마다 새로운 객체를 생성해서 반환을 해주는 문제 발생
-<img src="../images/Spring의 이해/img4.PNG" alt="순수한 DI Container의 객체 생성">
+<img src="../../images/Spring의 이해/img4.PNG" alt="순수한 DI Container의 객체 생성">
 
 - 순수한 DI 컨테이너인 AppConfig는 요청을 할 때 마다 새로운 객체를 새로 생성함
 - 메모리 낭비가 매우 심함
@@ -300,7 +300,7 @@ public class SingletonService {
 
 <mark>Spring Container 덕분에 싱글톤 패턴의 모든 단점을 해결하면서 객체를 싱글톤으로 유지할 수 있음</mark>
 
-<img src="../images/Spring의 이해/img5.PNG" alt="싱글톤 컨테이너">
+<img src="../../images/Spring의 이해/img5.PNG" alt="싱글톤 컨테이너">
 
 이처럼 Spring Container는 자동으로 Bean을 싱글톤 형식으로 지원해줌
 
@@ -336,7 +336,7 @@ public class SingletonService {
 
 **-> @Configuration 의 비밀**
 
-<img src="../images/Spring의 이해/img6.PNG" alt="@Configuration 과정에서 생기는 일">
+<img src="../../images/Spring의 이해/img6.PNG" alt="@Configuration 과정에서 생기는 일">
 
 @Configuration을 붙이면 내가 만든 AppConfig라는 클래스를 바로 사용하는 것이 아니라 Spring이 자동으로 (CGLIB이라는) 바이트코드 조작 라이브러리를 사용해서 AppConfig 클래스를 상속받은 임의의 다른 클래스를 만들고 그 클래스를 Spring Bean으로 등록함. 이를 통해 Singleton이 어떠한 상황에서도 유지될 수 있도록 만들어줌
 

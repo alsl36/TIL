@@ -12,14 +12,14 @@ ApplicationContext를 Spring Container라고 하고, 일종의 인터페이스�
 ### Spring Container의 생성 과정
 1. Spring Container 생성
 
-<img src="../images/Spring의 사용/image1.PNG" alt="Spring Container 생성">
+<img src="../../images/Spring의 사용/image1.PNG" alt="Spring Container 생성">
 
 - Spring Container 안에 Spring Bean 저장소가 생김
 - Spring Bean 저장소는 Spring Container를 생성할 때 매개값으로 전달한 구성 정보를 바탕으로 채워 넣음
 
 2. Spring Bean 등록
 
-<img src="../images/Spring의 사용/imgae2.PNG"  alt="Spring Bean 등록">
+<img src="../../images/Spring의 사용/imgae2.PNG"  alt="Spring Bean 등록">
 
 - Spring Container는 파라미터로 넘어온 설정 클래스 정보를 사용해서 Spring Bean 등록함
 - @Bean(name="...")으로 Bean 이름을 직접 부여할 수도 있음
@@ -27,9 +27,9 @@ ApplicationContext를 Spring Container라고 하고, 일종의 인터페이스�
 
 3. Spring Bean 의존관계 설정 - 준비 및 완료
 
-<img src="../images/Spring의 사용/image3.PNG" alt="Spring Bean 의존관계 설정 준비">
+<img src="../../images/Spring의 사용/image3.PNG" alt="Spring Bean 의존관계 설정 준비">
 
-<img src="../images/Spring의 사용/image4.PNG" alt="Spring Bean 의존관계 설정 완료">
+<img src="../../images/Spring의 사용/image4.PNG" alt="Spring Bean 의존관계 설정 완료">
 
 - Spring Container는 설정 정보를 참고해서 의존관계를 주입(DI)함
 - 단순히 자바 코드를 호출하는 것 같지만, 차이가 있음.(feat. 싱글톤 컨테이너)
@@ -147,10 +147,10 @@ discountPolicy) {
 의존관계 주입이 필요한 class에는 생성자 위에 @Autowired 어노테이션을 붙이면 자동으로 등록된 bean 중에서 의존관계를 주입시켜 줌
 
 1. @ComponentScan
-<img src="../images/Spring의 사용/img5.PNG" alt="컴포넌트 스캔">
+<img src="../../images/Spring의 사용/img5.PNG" alt="컴포넌트 스캔">
 
 2. @Autowired 의존관계 자동 주입
-<img src="../images/Spring의 사용/img6.PNG" alt="Autowired 의존관계 자동 주입">
+<img src="../../images/Spring의 사용/img6.PNG" alt="Autowired 의존관계 자동 주입">
 
 ### 탐색위치와 기본 스캔 대상
 
@@ -442,7 +442,7 @@ public NetworkClient() {
 
 **connect()를 생성자에서 호출하지 말고, bean에서 생성자 호출을 끝낸 후에 호출하면 되잖아?**
 </br>
-이 방식의 경우 동작에 있어서는 문제가 없음. 하지만 @Bean 메서드 안에서 객체 생성, 설정, 초기화까지 모두 책임지고 있다는 점에서 유지/보수 관점 상 좋은 코드가 아님
+이 방식의 경우 동작에 있어서는 문제가 없음. 하지만 @Bean 메서드 안에서 객체 생성, 설정, 초기화까지 모두 책임지고 있다는 점에서 유지/보수 관점 상 좋은 코드가 아님. 즉, Bean의 생성과 설정은 @Bean 팩토리 메서드 안에서 하더라도 해당 Bean의 초기화 작업은 해당 클래스 내부에서 하는 것이 권장됨
 
 > Spring Bean의 라이프 사이클은 다음과 같음. </br>
 스프링 컨테이너 생성 -> 스프링 빈 생성 -> 의존관계 주입 -> 초기화 콜백 -> 사용 -> 소멸전 콜백 -> 스프링 종료 </br>
@@ -452,3 +452,166 @@ Bean의 초기화가 완료 된 후에 호출되는 콜백, 소멸되기 직전�
 - 인터페이스(InitializingBean, DisposableBean)
 - 설정 정보에 초기화 메서드, 종료 메서드 지정
 - @PostConstruct, @PreDestroy 애노테이션 지원
+
+> *Bean의 생성, 설정, 초기화?* </br>
+ Bean의 생성과 설정, 초기화 각각을 구분해서 이해하면 좋음. </br> Bean의 생성은 실제 자바 인스턴스 객체를 만드는 단계로 ```NetworkClient client = new NetworkClient();``` 이런 코드가 들어감 </br>
+Bean의 설정은 생성된 객체가 제대로 동작하기 위해 필요한 값이나 의존성을 채워 넣는 단계로 의존관계 주입, setter 주입, 필드 주입 등이 해당됨 </br>
+Bean의 초기화는 이미 필요한 값과 의존성이 다 들어간 객체를 대상으로, 실제 사용 전에 해야 하는 준비 작업을 수행하는 단계로 DB와 네트워크 연결을 열거나, 캐시를 준비하거나, 초기 데이터를 읽어두는 작업을 함
+
+### 인터페이스 InitializingBean, DisposableBean
+> 생명주기 콜백을 원하는 Bean을 InitializingBean 과 DisposableBean 의 구현체로 implements 해주면, InitializingBean 인터페이스 안에 있는 afterPropertiesSet() 메서드와 DisposableBean 인터페이스 안에 있는 destroy() 메서드를 사용할 수 있음. afterPropertiesSet 메서드는 Bean의 설정작업까지 끝난 직후에 호출되는 메서드이고, destroy 메서드는 Bean이 소멸 직전에 호출되는 메서드임
+
+```java
+@Override 
+    public void afterPropertiesSet() throws Exception {
+        connect();
+        call("초기화 연결 메세지");
+    }
+```
+``` java
+@Override 
+    public void destroy() throws Exception {
+        disconnect();
+    }
+```
+
+**초기화, 소멸 인터페이스 단점**
+- 이 인터페이스는 스프링 전용 인터페이스이기에 빈 코드가 스프링 전용 인터페이스에 의존하게 됨
+- 초기화, 소멸 메서드의 이름을 변경할 수 없음
+- 내가 코드를 고칠 수 없는 외부 라이브러리에 적용할 수 없음
+
+### 빈 등록 초기화, 소멸 메서드 지정
+> 설정 정보에 @Bean(initMethod = "init", destroyMethod = "close")처럼 초기화, 소멸 메서드를 지정할 수 있음
+
+``` java
+@Bean(initMethod = "init", destroyMethod = "close")
+ public NetworkClient networkClient() {
+ NetworkClient networkClient = new NetworkClient();
+ networkClient.setUrl("http://hello-spring.dev");
+ return networkClient;
+ }
+ ```
+ @Bean의 설정 정보에 initMethod 필드에는 Bean 설정 직후에 호출할 메서드를, destroyMethod 필드에는 Bean 소멸 직전에 호출할 메서드를 작성해주면 됨
+
+ ``` java
+ public void init() {
+ System.out.println("NetworkClient.init");
+ connect();
+ call("초기화 연결 메시지");
+ }
+ public void close() {
+ System.out.println("NetworkClient.close");
+ disConnect();
+ }
+ ```
+Bean 코드에 미리 작성해 두었던 해당 메서드들이 호출됨 
+
+**설정 정보 사용 특징**
+- 메서드 이름을 자유롭게 줄 수 있음
+- Spring Bean이 Spring 코드에 의존하지 않음
+- 외부 라이브러리에도 초기화, 종료 메서드를 적용할 수 있음
+
+### 애노테이션 @PostConstruct, @PreDestroy
+> Bean 설정 직후에 호출하고 싶은 메서드에는 @PostConstruct 애노테이션을, Bean 소멸 직전에 호출하고 싶은 메서드에는 @PreDestroy 애노테이션을 붙여주면 됨
+
+``` java
+@PostConstruct 
+    public void init() {
+        connect();
+        call("초기화 연결 메세지");
+    }
+
+    @PreDestroy 
+    public void close() {
+        disconnect();
+    }
+```
+
+**PostConstruct, PreDestroy 애노테이션의 특징**
+- 가장 간편하고, 권장하는 방법으로 컴포넌트 스캔과 잘 어울림
+- javax 패키지에 들어있는 애노테이션으로써 스프링에 종속적인 기술이 아닌 자바 표준임(다른 컨테이너에서도 사용 가능)
+- 유일한 단점은 수정이 불가능한 외부 라이브러리에서는 사용이 어려움. 이 때는 앞서 배운 @Bean의 기능을 사용해야 함
+
+<mark>@PostConstruct, @PreDestroy 애노테이션을 사용하자. </br>
+수정이 어려운 라이브러리에서는 @Bean의 initMethod, destroyMethod를 사용하자</mark>
+
+## Bean Scope
+> Spring이 하나의 Bean 인스턴스를 어느 범위까지, 얼마나 오래 유지하고 재사용할 지를 정하는 규칙을 Bean Scope 라고 함
+
+**<Spring이 지원하는 Bean Scope>**
+
+- Singleton :  기본 스코프로써 스프링 컨테이너의 시작과 종료까지 유지되는 가장 넓은 범위의 스코프이고, 하나의 인스턴스를 재사용하는 스코프
+- Prototype :  스프링 컨테이너는 프로토타입 빈의 생성과 의존관계 주입까지만 관여하고 더는 관리하지 않는 매우 짧은 범위의 스코프. 또한 하나의 인스턴스를 재사용 하지 않고 조회할 때 마다 새롭게 생성함
+- Request : 웹 요청이 들어오고 나갈때 까지 유지되는 스코프
+- Session : 웹 세션이 생성되고 종료될 때 까지 유지되는 스코프
+- Application : 웹의 서블릿 컨텍스트와 같은 범위로 유지되는 스코프
+
+### Prototype Scope
+- Bean을 요청할 때마다 새로운 인스턴스 객체를 생성해서 반환함(<-> Singleton)
+- Bean의 생성과 의존관계 주입 등의 설정이 모두 Client가 Bean을 요청하는 시점에 이루어짐(미리 만들어서 컨테이너에 넣어두는 Singleton과 반대)
+- Spring Container는 Prototype Bean의 생성, 설정, 초기화까지만 처리하고, Client에게 반환한 이후에 Bean에 대한 책임은 Client에게 있음(@PreDestroy 같은 종료 메서드 호출 안됨)
+
+### Prototype Scope 를 Singleton Bean 과 함께 사용 시 문제점
+
+> Prototype Scope를 Singleton Bean 안에서 함께 사용할 때는 의도한 대로 잘 동작하지 않을 수 있으므로 주의해야 함
+
+<img src="../../images/Spring의 사용/img7.PNG">
+
+Singleton Bean 내부에서 Prototype Bean이 주입되어 있는 경우에 Singleton Bean 내부의 메서드를 통해 Prototype Bean에 접근하면, 조회할 때마다 새로운 객체를 생성하는 Prototype Bean을 기대했지만, Singleton scope 방식으로 작동하는 모습을 볼 수 있음. </br>
+Singleton Bean은 생성 지섬에만 의존관계 주입을 받기 때문에, 이 시점에서 Prototype Bean이 새로 생성되어 주입되기는 하지만, Singleton Bean과 함께 계속 유지되는 것이 문제임
+
+### ObjectFactory, ObjectProvider
+> 의존관계를 외부에서 주입(DI) 받는게 아니라 직접 필요한 의존관계를 해당 Bean 코드 안에서 찾는 것을 Dependency Lookup(DL) 의존관계 조회(탐색)이라 함. Singleton Bean 내부에서 Prototype Bean 의존관계를 주입받으면 생성될 때 딱 한 번만 주입받지만, logic() 메서드가 호출될 때마다 Prototype Bean 의존관계를 직접 조회해서 가져오면 logic() 메서드가 호출될 때마다 새로운 Prototype Bean을 가져올 수 있음. 이를 가능하게 해주는 것이 ObjectFactory 와 ObjectProvider
+
+``` java
+static class ClientBean {
+        
+        @Autowired 
+        private ObjectProvider<PrototypeBean> prototypeBeanProvider; //ObjectProvider 대신에 ObjectFactory 타입으로 바꿔도 동작함
+        
+        public int logic() {
+            PrototypeBean prototypeBean = prototypeBeanProvider.getObject();
+            prototypeBean.addCount();
+            int count = prototypeBean.getCount();
+            return count;
+        }
+    }
+```
+ObjectProvider를 Spring Container에게 주입받은 후에 logic() 메서드가 호출될 때마다 Provider에서 PrototypeBean 타입의 빈을 조회하여 사용할 수 있음. 즉, Spring Container의 getBean 메서드와 동일한 역할을 Provider가 해주는 동시에, Spring Container 전체를 Bean 코드 내에서 사용하면 Spring에 지나치게 의존적이기에 DL 기능만 가져온 Provider를 사용하는 것
+
+***ObjectFactory**: 기능이 단순, 별도의 라이브러리 필요 없음. 스프링에 의존*
+</br>
+***ObjectProvider**: ObjectFactory 상속하여 옵션, 스트림 처리등 편의 기능이 더 많고, 별도의 라이브러리 필요 없음. 스프링에 의존*
+
+### JSA-330 Provider
+> ObjectFactory 와 ObjectProvider 의 DL 기능을 똑같이 제공하는 자바 표준으로써 jakarta.inject 패키지의 Provider를 사용할 수 있음
+
+``` java
+static class ClientBean {
+        
+        @Autowired 
+        private Provider<PrototypeBean> provider;
+        
+        public int logic() {
+            PrototypeBean prototypeBean = provider.get();
+            prototypeBean.addCount();
+            int count = prototypeBean.getCount();
+            return count;
+        }
+    }
+```
+provider.get() 메서드를 통해서 Spring Container를 통해 해당 Bean을 찾아서 반환함.(DL) 자바표준 기능이고, 정말 딱 DL 기능만 제공함. 하지만 별도의 라이브러리를 넣어줘야 된다는 불편함이 있음
+
+<mark>웬만하면 Prototype Bean을 직접 사용하는 일도 드물고, DL이 필요한 경우도 드물지만, 필요하다면 ObjectProvider를 사용하는 것이 다양한 기능을 편리하게 사용할 수 있어 좋음.</mark>
+
+### Web Scope
+> Web Scope는 Web 환경과 관련되어 동작하는 Scope로써 Prototype과 달리 Spring이 해당 Scope의 종료시점까지 관리함.(따라서 종료 메서드 호출됨)
+
+<Web Scope 종류>
+- request : HTTP 요청이 **하나**가 들어오고 나갈 때까지 유지되는 스코프, 각각의 HTTP 요청마다 별도의 빈 인스턴스가 생성되고, 관리됨
+- session : HTTP Session과 동일한 생명주기를 가지는 스코프
+- application : 서블릿 컨텍스트와 동일한 생명주기를 가지는 스코프
+- websocket : 웹 소켓과 동일한 생명주기를 가지는 스코프
+
+**HTTP request 요청 당 각각 할당되는 request 스코프**
+<img src="../../images/Spring의 사용/img8.PNG">
