@@ -260,3 +260,234 @@ response.getWriter().write(result);
 ```
 content-type을 application/json 으로 지정한 이후에 response.getWriter().write() 메서드 안에 json 데이터를 매개값으로 넣어주면 JSON 데이터를 response로 응답 가능
 
+
+## Servlet, JSP, MVC 패턴
+> 애플리케이션을 만들 때 Servlet을 사용할 때 발생하는 단점을 해결하고자 JSP가 생겨남. 하지만, JSP를 이용한 구현에도 여러 유지, 보수적인 문제가 발생하였기에 최종적으로 MVC 패턴을 사용하여 애플리케이션 개발을 구현해냄
+
+### 공통적인 model 만들기
+> Servlet을 이용하는 방식과 JSP를 이용하는 방식 모두 Member entity 와 Member Repository 같은 Model을 공통적으로 사용하기 때문에 Member entity 와 Member Repository를 만들어 놓자. 결국, servlet 과 jsp 방식은 client에게 보여지는 화면을 만드는 방식의 차이에 해당됨
+
+<mark>주의할 점은 Member Repository 를 Singleton 모델로 만들어야 함. 즉, 생성자를 private 으로 설정하고 getInstance 메서드를 통해서만 얻어올 수 있도록 설계함</mark>
+
+### Servlet으로 회원 관리 애플리케이션 만들기
+> Servlet을 사용하여 회원 관리 애플리케이션을 구현할 때 발생하는 문제를 확인해보자
+
+<회원 등록 폼>
+``` java
+@WebServlet(name = "memberFormServlet", urlPatterns = "/servlet/members/new-form")
+public class MemberFormServlet extends HttpServlet {
+
+    private MemberRepository memberRepository = MemberRepository.getInstance();
+
+    @Override
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        
+        response.setContentType("text/html");
+        response.setCharacterEncoding("utf-8");
+
+        PrintWriter w = response.getWriter();
+        w.write("<!DOCTYPE html>\n" +
+                "<html>\n" +
+                "<head>\n" +
+                "   <meta charset=\"UTF-8\">\n" +
+                "   <title>Title</title>\n" +
+                "</head>\n" +
+                "<body>\n" +
+                "<form action=\"/servlet/members/save\" method=\"post\">\n" +
+                "   username: <input type =\"text\" name=\"username\" />\n" +
+                "   age:      <input type =\"text\" name=\"age\" />\n" +
+                "   <button type=\"submit\">전송</button>\n" +
+                "</form>\n" +
+                "</body>\n" +
+                "</html>\n");  
+    }
+
+}
+```
+
+<회원 저장>
+``` java
+@WebServlet(name = "memberSaveServlet", urlPatterns = "/servlet/members/save")
+public class MemberSaveServlet extends HttpServlet{
+
+    private MemberRepository memberRepository = MemberRepository.getInstance();
+
+    @Override
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String username = request.getParameter("username");
+        int age = Integer.parseInt(request.getParameter("age"));
+
+        Member member = new Member(username, age);
+        memberRepository.save(member);
+
+        response.setContentType("text/html");
+        response.setCharacterEncoding("utf-8");
+        PrintWriter w = response.getWriter();
+        w.write("<html>\n" +
+                "<head>\n" +
+                "   <meta charset=\"UTF-8\">\n" +
+                "</head>\n" +
+                "<body>\n" +
+                "성공\n" +
+                "<ul>\n" +
+                "   <li>id="+member.getId()+"</li>\n" +
+                "   <li>username="+member.getUsername()+"</li>\n" +
+                "   <li>age="+member.getAge()+"</li>\n" +
+                "</ul>\n" +
+                "<a href=\"/index.html\">메인</a>\n" +
+                "</body>\n" +
+                "</html>");
+    }
+}
+```
+form 태그 안에 적혀 들어오는 파라미터를 조회해서 Member 객체를 생성하고, Member 객체를 MemberRepository를 통해서 저장함. 그리고, Member 객체를 사용해서 결과 화면용 HTML을 동적으로 만들어서 응답함
+
+<회원 목록>
+``` java
+@WebServlet(name = "memberListServlet", urlPatterns = "/servlet/members")
+public class MemberListServlet extends HttpServlet{
+    
+    private MemberRepository memberRepository = MemberRepository.getInstance();
+
+    @Override
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        
+        List<Member> members = memberRepository.findAll();
+
+        response.setContentType("text/html");
+        response.setCharacterEncoding("utf-8");
+
+        PrintWriter w = response.getWriter();
+        w.write("<html>");
+        w.write("<head>");
+        w.write(" <meta charset=\"UTF-8\">");
+        w.write(" <title>Title</title>");
+        w.write("</head>");
+        w.write("<body>");
+        w.write("<a href=\"/index.html\">메인</a>");
+        w.write("<table>");
+        w.write(" <thead>");
+        w.write(" <th>id</th>");
+        w.write(" <th>username</th>");
+        w.write(" <th>age</th>");
+        w.write(" </thead>");
+        w.write(" <tbody>");
+
+        for (Member member : members) {
+            w.write(" <tr>");
+            w.write(" <td>" + member.getId() + "</td>");
+            w.write(" <td>" + member.getUsername() + "</td>");
+            w.write(" <td>" + member.getAge() + "</td>");
+            w.write(" </tr>");
+        }
+
+        w.write(" </tbody>");
+        w.write("</table>");
+        w.write("</body>");
+
+    }
+
+}
+```
+memberRepository.findAll() 메서드를 통해 모든 회원을 조회하고, 회원 목록을 for 루프를 통해서 동적으로 HTML을 만들어서 응답함
+
+> 정리
+> </br>
+> 이렇게 Servlet 과 Java 코드 만으로 동적으로 원하는 HTML을 만들어서 응답할 수 있음. 어떤 회원이 가입을 했는 가에 따라 동적으로 목록을 생성해서 client에게 응답하는 것. 하지만, 코드에서 볼 수 있듯이 매우 복잡하고 비효율적임. Java 코드 안에서 문자열 형식으로 HTML 을 생성해서 응답하는 방식이 너무나도 비효율적이고, 유지 보수 측면에서 좋지 않음. 차라리 HTML 파일 안에서 Java 코드가 필요한 부분에만 부분적으로 Java 코드를 넣을 수 있다면 더욱 편리할 것 같음. 이것이 바로 템플릿 엔진이 나온 이유이고, 대표적으로 JSP, Thymleaf 등이 있음
+
+### JSP로 회원 관리 애플리케이션 만들기
+> 이번에는 템플릿 엔진(JSP)로 회원 관리 애플리케이션을 만들어서 Servlet으로 만들었을 때의 문제점을 해결해보자
+
+<회원 등록 JSP>
+```html
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<html>
+<head>
+    <title>Title</title>
+</head>
+<body>
+<form action="/jsp/members/save.jsp" method="post">
+    username: <input type="text" name="username" />
+    age: <input type="text" name="age" />
+    <button type="submit">전송</button>
+</form>
+</body>
+</html>
+```
+회원 등록 폼은 Servlet으로 만들었을 때와 거의 동일함. form 태그의 action 필드만 다른 주소로 리다이렉팅 되도록 수정
+
+<회원 저장 JSP>
+```html
+<%@ page import="hello.servlet.domain.member.MemberRepository" %>
+<%@ page import="hello.servlet.domain.member.Member" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%
+    //request, response 사용 가능
+    MemberRepository memberRepository = MemberRepository.getInstance();
+
+    String username = request.getParameter("username");
+    int age = Integer.parseInt(request.getParameter("age"));
+
+    Member member = new Member(username, age);
+    memberRepository.save(member);
+%>
+<html>
+<head>
+    <title>Title</title>
+</head>
+<body>
+성공
+<ul>
+    <li>id=<%=member.getId()%></li>
+    <li>username=<%=member.getUsername()%></li>
+    <li>age=<%=member.getAge()%></li>
+</ul>
+<a href="/index.html">메인</a>
+</body>
+</html>
+
+```
+JSP는 Java 코드를 그대로 다 사용할 수 있음. <% ~~ %> 안에는 Java 코드를 입력할 수 있고, <%= ~~ %> 안에는 Java 코드를 출력할 수 있음. 회원 저장 JSP를 보면 기본적으로 HTML 을 중심으로 하고, 중간중간 필요할 때마다 Java 코드를 사용하여 보다 편리함
+
+<회원 목록 JSP>
+```html
+<%@ page import="hello.servlet.domain.member.MemberRepository" %>
+<%@ page import="hello.servlet.domain.member.Member" %>
+<%@ page import="java.util.List" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%
+    MemberRepository memberRepository = MemberRepository.getInstance();
+    List<Member> members = memberRepository.findAll();
+%>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<a href="/index.html">메인</a>
+<table>
+    <thead>
+    <th>id</th>
+    <th>username</th>
+    <th>age</th>
+    </thead>
+    <tbody>
+    <%
+        for (Member member : members) {
+            out.write("     <tr>");
+            out.write("         <td>" + member.getId() + "</td>");
+            out.write("         <td>" + member.getUsername() + "</td>");
+            out.write("         <td>" + member.getAge() + "</td>");
+        }
+    %>
+    </tbody>
+</table>
+</body>
+</html>
+
+```
+
+> 정리
+> </br>
+> Servlet으로 개발할 때는 뷰(View)화면을 위한 HTML을 만드는 작업이 자바 코드에 섞여서 지저분하고 복잡했음. JSP를 사용한 덕에 뷰를 생성하는 HTML 작업을 깔끔하게 가져가고, 중간중간 동적으로 변경이 필요한 부분에만 Java 코드를 적용했음. 하지만 이 경우에도 몇가지 문제가 발생함. 예를들어 회원 저장 JSP를 보면, 코드의 상위 절반은 회원을 저장하기 위한 비즈니스 로직이고, 나머지 절반만 결과를 HTML로 보여주기 위한 뷰 영역임. 즉, Java코드, 데이터를 조회하는 Repository 등 다양한 코드가 모두 JSP에 노출되어 있어서, JSP가 너무 많은 역할을 하게 됨. 이 역시 유지 보수에 문제가 생김. <mark>비즈니스 로직은 Servlet처럼 다른 곳에서 처리하고, JSP 목적에 맞게 HTML 화면(View)를 그리는 일에만 집중하도록 발전한 것이 MVC 패턴</mark>
