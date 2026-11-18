@@ -491,3 +491,85 @@ JSP는 Java 코드를 그대로 다 사용할 수 있음. <% ~~ %> 안에는 Jav
 > 정리
 > </br>
 > Servlet으로 개발할 때는 뷰(View)화면을 위한 HTML을 만드는 작업이 자바 코드에 섞여서 지저분하고 복잡했음. JSP를 사용한 덕에 뷰를 생성하는 HTML 작업을 깔끔하게 가져가고, 중간중간 동적으로 변경이 필요한 부분에만 Java 코드를 적용했음. 하지만 이 경우에도 몇가지 문제가 발생함. 예를들어 회원 저장 JSP를 보면, 코드의 상위 절반은 회원을 저장하기 위한 비즈니스 로직이고, 나머지 절반만 결과를 HTML로 보여주기 위한 뷰 영역임. 즉, Java코드, 데이터를 조회하는 Repository 등 다양한 코드가 모두 JSP에 노출되어 있어서, JSP가 너무 많은 역할을 하게 됨. 이 역시 유지 보수에 문제가 생김. <mark>비즈니스 로직은 Servlet처럼 다른 곳에서 처리하고, JSP 목적에 맞게 HTML 화면(View)를 그리는 일에만 집중하도록 발전한 것이 MVC 패턴</mark>
+
+
+### MVC Pattern
+> Servlet만 사용했을 때와 JSP만 사용했을 때의 단점들을 보완하고 장점들은 가져와서 Model, View, Controller 이렇게 3개의 덩어리로 각자의 역할을 분리하여 앱을 구현하는 패턴. MVC 패턴으로 나누지 않고 앞선 방식들을 사용할 경우의 가장 큰 문제는 변경의 <mark>라이프 사이클이 다르다는 것.</mark> 에를들어 UI를 수정하는 일과 비즈니스 로직을 수정하는 일은 각각 다르게 발생할 가능성이 매우 높고 서로에게 영향을 주지 않기에 이들을 따로 분리해서 개발하는 것이 유지 보수에 좋음
+
+<img src="../../images/Spring%20MVC/Spring%20MVC의%20사용/img4.png">
+
+- Controller : HTTP 요청을 받아서 파라미터를 검증하고, 비즈니스 로직을 실행함. 그리고 View에 전달할 결과 데이터를 조회헤서 Model에 담아줌
+- Model : View에 출력할 데이터를 담아둠. View가 필요한 데이터를 모두 Model에 담아서 전달해주는 덕분에 View는 비즈니스 로직이나 데이터 접근을 몰라도 되고, 화면을 렌더링 하는 일에 집중할 수 있음
+- View : Model에 담겨있는 데이터를 사용해서 화면을 그리는 일에 집중함
+
+> 참고 
+> </br>
+> Controller 안에 비즈니스 로직을 포함할 수 있지만, 이 경우 Controller가 너무 많은 일을 담당해야 하므로 일반적으로 비즈니스 로직은 Service라는 계층을 따로 만들어서 처리함. 그리고 Controller는 비즈니스 로직이 있는 Service를 호출하는 역할을 담당함
+
+<회원 등록 폼 - Controller>
+```java
+@WebServlet(name = "mvcMemberSaveServlet", urlPatterns = "/servlet-mvc/members/save")
+public class MvcMemberSaveServlet extends HttpServlet {
+
+    MemberRepository memberRepository = MemberRepository.getInstance();
+
+    @Override
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+
+        String username = request.getParameter("username");
+        int age = Integer.parseInt(request.getParameter("age"));
+
+        Member member = new Member(username, age);
+        memberRepository.save(member);
+
+        //Model에 데이터를 보관한다.
+        request.setAttribute("member", member);
+
+        String viewPath = "/WEB-INF/views/save-result.jsp";
+        RequestDispatcher dispatcher = request.getRequestDispatcher(viewPath);
+        dispatcher.forward(request, response);
+
+    }
+}
+```
+- HttpServletRequest를 Model로 사용함. request가 제공하는 setAttribute()를 사용하면 request 객체에 데이터를 보관해서 뷰에 전달할 수 있음. View는 request.getAttribute()를 사용해서 데이터를 꺼냄
+- dispatcher.forward() 메서드는 다른 서블릿이나 JSP로 이동할 수 있는 기능임. 서버 내부에서 다시 호출이 발생하기에 response가 가고 url이 변경돼서 다시 request가 오는 redirecting과는 차이가 있음(forward 메서드는 서버 내부에서 일어나는 호출임)
+- /WEB-INF 경로 안에 있는 JSP는 외부에서 직접 JSP를 호출할 수 없고, Controller를 통해서만 JSP를 호출할 수 있음. 즉, URL에서 직접 경로를 입력하여 JSP를 호출하는 것이 불가능함
+
+<회원 저장 - View>
+```html
+<body>
+성공
+<ul>
+    <li>id=${member.id}</li>
+    <li>username=${member.username}</li>
+    <li>age=${member.age}</li>
+</ul>
+<a href="/index.html" >메인</a>
+</body>
+```
+<%= request.getAttribute("member") %>로 Model에 저장한 member 객체를 꺼낼 수 있지만, 너무 복잡해짐. JSP는 ${} 문법을 제공하는데, 이 문법을 사용하면 request의 attribute에 담긴 데이터를 편리하게 조회 가능
+
+<회원 목록 조회 - View>
+```html
+<body>
+<a href="/index.html">메인</a>
+<table>
+    <thead>
+    <th>id</th>
+    <th>username</th>
+    <th>age</th>
+    </thead>
+    <tbody>
+    <c:forEach var="item" items="${members}">
+        <tr>
+            <td>${item.id}</td>
+            <td>${item.username}</td>
+            <td>${item.age}</td>
+        </tr>
+    </c:forEach>
+    </tbody>
+</table>
+</body>
+```
+역시나 여기서도 <% for ~~~~ %> 를 통해서 for문을 돌려 attribute에 저장된 members List 타입을 돌릴 수 있지만, 너무나도 번거롭기에 JSP에서는 forEach를 제공해서 for문과 동일한 결과를 얻을 수 있음
