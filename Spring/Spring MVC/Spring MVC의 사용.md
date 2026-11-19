@@ -573,3 +573,9 @@ public class MvcMemberSaveServlet extends HttpServlet {
 </body>
 ```
 역시나 여기서도 <% for ~~~~ %> 를 통해서 for문을 돌려 attribute에 저장된 members List 타입을 돌릴 수 있지만, 너무나도 번거롭기에 JSP에서는 forEach를 제공해서 for문과 동일한 결과를 얻을 수 있음
+
+### MVC Pattern 한계
+
+> MVC Pattern을 적용한 덕분에 Controller의 역할과 View를 렌더링 하는 역할을 명확하게 구분했음. 하지만 Controller는 딱봐도 중복이 많고, 필요하지 않는 코드들도 많이 보임. 예를들어, dispatcher에서 forward 메서드를 호출하는 부분이나, ViewPath 변수에 담긴 경로도 계속해서 반복됨. <mark>이러한 반복 때문에 viewpath 변수의 경로가 변경되는 등의 변화를 공통처리하기 어려워지는 한계 발생</mark>
+
+> 이를 해결하는 방법이 Controller를 호출하기 전에 공통 기능들을 먼저 처리하는 소위 수문장 역할을 하는 기능이 필요함. Front Controller Pattern을 도입하여 공통 기능들을 먼저 처리한 이후에 Controller를 호출하여 문제 해결 가능
